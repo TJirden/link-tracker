@@ -25,7 +25,7 @@ public interface Command {
         String text = update.message().text().trim();
 
         return text.equals("/" + command())
-            || text.startsWith("/" + command() + " ")
-            || text.startsWith("/" + command() + "@");
+                || text.startsWith("/" + command() + " ")
+                || text.startsWith("/" + command() + "@");
     }
 }
