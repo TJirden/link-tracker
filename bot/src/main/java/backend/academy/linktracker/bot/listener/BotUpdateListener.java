@@ -46,7 +46,7 @@ public class BotUpdateListener implements UpdatesListener {
                 log.error("Ошибка обработки", e);
             }
         }
-        return UpdatesListener.CONFIRMED_UPDATES_ALL;
+        return CONFIRMED_UPDATES_ALL;
     }
 
     private void processUpdate(Update update) {
