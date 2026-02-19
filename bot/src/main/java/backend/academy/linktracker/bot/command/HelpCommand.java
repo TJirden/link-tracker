@@ -35,6 +35,6 @@ public class HelpCommand implements Command {
         }
 
         return new SendMessage(chatId, sb.toString())
-            .parseMode(com.pengrad.telegrambot.model.request.ParseMode.Markdown);
+                .parseMode(com.pengrad.telegrambot.model.request.ParseMode.Markdown);
     }
 }
