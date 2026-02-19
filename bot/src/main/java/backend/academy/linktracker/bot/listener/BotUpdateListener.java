@@ -64,6 +64,11 @@ public class BotUpdateListener implements UpdatesListener {
         }
 
         long chatId = update.message().chat().id();
-        bot.execute(new SendMessage(chatId, "Я не понимаю"));
+        String text = update.message().text();
+        if (text.startsWith("/")) {
+            bot.execute(new SendMessage(chatId, "Неизвестная команда. Используй /help для списка команд."));
+        } else {
+            bot.execute(new SendMessage(chatId, "Я понимаю только команды. Введи /help для справки."));
+        }
     }
 }
