@@ -1,4 +1,4 @@
-package backend.academy.linktracker.bot.listener;
+package backend.academy.linktracker.bot.service;
 
 import backend.academy.linktracker.bot.command.Command;
 import com.pengrad.telegrambot.TelegramBot;
@@ -20,6 +20,8 @@ public class BotUpdateListener implements UpdatesListener {
 
     private final TelegramBot bot;
     private final List<Command> commands;
+    private final UserSessionService sessionService;
+    private final LinkProcessor linkProcessor;
 
     @PostConstruct
     public void init() {
@@ -28,9 +30,7 @@ public class BotUpdateListener implements UpdatesListener {
                 .toArray(BotCommand[]::new);
 
         bot.execute(new SetMyCommands(botCommands));
-
         bot.setUpdatesListener(this);
-
         log.info("Бот запущен. Количество зарегистрированных команд: {}", commands.size());
     }
 
@@ -51,24 +51,51 @@ public class BotUpdateListener implements UpdatesListener {
             return;
         }
 
+        String text = update.message().text();
+        long chatId = update.message().chat().id();
+        SendMessage request = null;
+
+        if (text.startsWith("/")) {
+            if (sessionService.isWaitingForInput(chatId)) {
+                log.info("Пользователь ввел команду во время диалога: chatId={}, command={}", chatId, text);
+                sessionService.clearSession(chatId);
+            }
+            request = processCommand(update);
+        } else {
+            request = processLine(update);
+        }
+
+        if (request != null) {
+            bot.execute(request);
+            log.info("Отправлен ответ пользователю: chatId={}", chatId);
+        }
+    }
+
+    private SendMessage processCommand(Update update) {
         long chatId = update.message().chat().id();
         String text = update.message().text();
 
         for (Command command : commands) {
             if (command.supports(update)) {
-                SendMessage response = command.handle(update);
-                bot.execute(response);
                 log.info("Обработана команда: command=/{}, chatId={}, text={}", command.command(), chatId, text);
-                return;
+                return command.handle(update);
             }
         }
 
-        if (text.startsWith("/")) {
-            bot.execute(new SendMessage(chatId, "Неизвестная команда. Используй /help для списка команд."));
-            log.warn("Получена неизвестная команда: chatId={}, text={}", chatId, text);
-        } else {
-            bot.execute(new SendMessage(chatId, "Я понимаю только команды. Введи /help для справки."));
-            log.info("Получено сообщение без команды: chatId={}, text={}", chatId, text);
+        log.warn("Получена неизвестная команда: chatId={}, text={}", chatId, text);
+        return new SendMessage(chatId, "Неизвестная команда. Используй /help для списка команд.");
+    }
+
+    private SendMessage processLine(Update update) {
+        long chatId = update.message().chat().id();
+        String text = update.message().text();
+
+        if (sessionService.isWaitingForInput(chatId)) {
+            log.info("Обработка ввода в рамках диалога: chatId={}, text={}", chatId, text);
+            return linkProcessor.process(update);
         }
+
+        log.info("Получено сообщение без команды: chatId={}, text={}", chatId, text);
+        return new SendMessage(chatId, "Я понимаю только команды. Введи /help для справки.");
     }
 }
