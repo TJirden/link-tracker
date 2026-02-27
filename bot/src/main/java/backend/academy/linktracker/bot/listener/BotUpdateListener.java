@@ -9,20 +9,17 @@ import com.pengrad.telegrambot.request.SendMessage;
 import com.pengrad.telegrambot.request.SetMyCommands;
 import jakarta.annotation.PostConstruct;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class BotUpdateListener implements UpdatesListener {
 
     private final TelegramBot bot;
     private final List<Command> commands;
-
-    public BotUpdateListener(TelegramBot bot, List<Command> commands) {
-        this.bot = bot;
-        this.commands = commands;
-    }
 
     @PostConstruct
     public void init() {
@@ -34,7 +31,7 @@ public class BotUpdateListener implements UpdatesListener {
 
         bot.setUpdatesListener(this);
 
-        log.info("Бот запущен. Зарегистрировано команд: {}", commands.size());
+        log.info("Бот запущен. Количество зарегистрированных команд: {}", commands.size());
     }
 
     @Override
@@ -43,7 +40,7 @@ public class BotUpdateListener implements UpdatesListener {
             try {
                 processUpdate(update);
             } catch (Exception e) {
-                log.error("Ошибка обработки", e);
+                log.error("Ошибка обработки обновления: updateId={}", update.updateId(), e);
             }
         }
         return CONFIRMED_UPDATES_ALL;
@@ -54,21 +51,24 @@ public class BotUpdateListener implements UpdatesListener {
             return;
         }
 
+        long chatId = update.message().chat().id();
+        String text = update.message().text();
+
         for (Command command : commands) {
             if (command.supports(update)) {
                 SendMessage response = command.handle(update);
                 bot.execute(response);
-                log.info("Обработана команда /{}", command.command());
+                log.info("Обработана команда: command=/{}, chatId={}, text={}", command.command(), chatId, text);
                 return;
             }
         }
 
-        long chatId = update.message().chat().id();
-        String text = update.message().text();
         if (text.startsWith("/")) {
             bot.execute(new SendMessage(chatId, "Неизвестная команда. Используй /help для списка команд."));
+            log.warn("Получена неизвестная команда: chatId={}, text={}", chatId, text);
         } else {
             bot.execute(new SendMessage(chatId, "Я понимаю только команды. Введи /help для справки."));
+            log.info("Получено сообщение без команды: chatId={}, text={}", chatId, text);
         }
     }
 }
