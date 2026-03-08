@@ -2,6 +2,7 @@ package backend.academy.linktracker.bot.command;
 
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
+import javax.swing.Spring;
 
 /**
  * Контракт для любой slash-команды бота.
@@ -17,12 +18,10 @@ public interface Command {
     SendMessage handle(Update update);
 
     /** Проверяет, подходит ли данное обновление этой команде */
-    default boolean supports(Update update) {
-        if (update.message() == null || update.message().text() == null) {
+    default boolean supports(String text) {
+        if (text == null) {
             return false;
         }
-
-        String text = update.message().text().trim();
 
         return text.equals("/" + command())
                 || text.startsWith("/" + command() + " ")

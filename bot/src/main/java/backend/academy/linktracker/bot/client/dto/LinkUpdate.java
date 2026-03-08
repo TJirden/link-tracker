@@ -3,4 +3,4 @@ package backend.academy.linktracker.bot.client.dto;
 import java.net.URI;
 import java.util.List;
 
-public record LinkResponse(Long id, URI url, List<String> tags) {}
+public record LinkUpdate(Long id, URI url, String description, List<Long> tgChatIds) {}

@@ -76,7 +76,7 @@ public class BotUpdateListener implements UpdatesListener {
         String text = update.message().text();
 
         for (Command command : commands) {
-            if (command.supports(update)) {
+            if (command.supports(text)) {
                 log.info("Обработана команда: command=/{}, chatId={}, text={}", command.command(), chatId, text);
                 return command.handle(update);
             }

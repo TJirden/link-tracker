@@ -25,7 +25,7 @@ public class LinkService {
      */
     public SendMessage getList(long chatId) {
         try {
-            ListLinksResponse response = scrapperClient.getLinks(chatId);
+            ListLinksResponse response = scrapperClient.getLinks(chatId).getBody();
             List<LinkResponse> links = response.links();
 
             if (links.isEmpty()) {
@@ -50,7 +50,7 @@ public class LinkService {
      */
     public SendMessage trackLink(long chatId, URI url) {
         try {
-            scrapperClient.addLink(chatId, new AddLinkRequest(url));
+            scrapperClient.addLink(chatId, new AddLinkRequest(url, null));
             return new SendMessage(chatId, "Ссылка успешно добавлена в отслеживание!");
         } catch (Exception e) {
             log.error("Ошибка при добавлении ссылки {} для чата {}", url, chatId, e);

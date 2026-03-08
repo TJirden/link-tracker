@@ -1,4 +1,4 @@
-package backend.academy.linktracker.bot.client.dto;
+package backend.academy.linktracker.scrapper.client.dto;
 
 import java.net.URI;
 import java.util.List;
