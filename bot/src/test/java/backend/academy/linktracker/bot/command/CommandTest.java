@@ -1,27 +1,52 @@
 package backend.academy.linktracker.bot.command;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
+import backend.academy.linktracker.bot.client.ScrapperClient;
+import backend.academy.linktracker.bot.service.LinkService;
+import backend.academy.linktracker.bot.service.UserSessionService;
+import backend.academy.linktracker.bot.service.UserState;
 import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
-import com.pengrad.telegrambot.model.User;
 import com.pengrad.telegrambot.request.SendMessage;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.http.ResponseEntity;
 
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("Command Tests")
 class CommandTest {
+
+    @Mock
+    private ScrapperClient scrapperClient;
+
+    @Mock
+    private LinkService linkService;
+
+    @Mock
+    private UserSessionService sessionService;
 
     @Nested
     @DisplayName("StartCommand")
     class StartCommandTest {
 
-        private final StartCommand command = new StartCommand();
+        private StartCommand command;
+
+        @BeforeEach
+        void setUp() {
+            command = new StartCommand(scrapperClient);
+        }
 
         @Test
         @DisplayName("Должна возвращать правильное имя команды")
@@ -36,43 +61,27 @@ class CommandTest {
         }
 
         @Test
-        @DisplayName("Должна обрабатывать команду /start с приветствием")
-        void shouldHandleStartCommand() {
-            Update update = mockUpdate(123L, "Иван", "/start");
+        @DisplayName("Должна успешно регистрировать чат и возвращать приветствие")
+        void shouldRegisterChatAndReturnGreeting() {
+            // given
+            long chatId = 123L;
+            Update update = createMockUpdate(chatId, "/start");
+            when(scrapperClient.registerChat(chatId))
+                    .thenReturn(ResponseEntity.ok().build());
 
+            // when
             SendMessage response = command.handle(update);
 
-            assertThat(response.getParameters().get("chat_id")).isEqualTo(123L);
+            // then
+            verify(scrapperClient).registerChat(chatId);
+            assertThat(response.getParameters().get("chat_id")).isEqualTo(chatId);
             assertThat((String) response.getParameters().get("text")).contains("Привет");
         }
 
         @Test
         @DisplayName("Должна поддерживать команду /start")
         void shouldSupportStartCommand() {
-            Update update = mockUpdate(123L, "User", "/start");
-            assertThat(command.supports(update)).isTrue();
-        }
-
-        @Test
-        @DisplayName("Должна поддерживать команду /start с упоминанием бота")
-        void shouldSupportStartCommandWithMention() {
-            Update update = mockUpdate(123L, "User", "/start@mybot");
-            assertThat(command.supports(update)).isTrue();
-        }
-
-        @Test
-        @DisplayName("Не должна поддерживать другие команды")
-        void shouldNotSupportOtherCommands() {
-            Update update = mockUpdate(123L, "User", "/help");
-            assertThat(command.supports(update)).isFalse();
-        }
-
-        @Test
-        @DisplayName("Не должна поддерживать null message")
-        void shouldNotSupportNullMessage() {
-            Update update = mock(Update.class);
-            when(update.message()).thenReturn(null);
-            assertThat(command.supports(update)).isFalse();
+            assertThat(command.supports("/start")).isTrue();
         }
     }
 
@@ -80,36 +89,44 @@ class CommandTest {
     @DisplayName("HelpCommand")
     class HelpCommandTest {
 
+        private HelpCommand command;
+
+        @BeforeEach
+        void setUp() {
+            Command mockCommand1 = mock(Command.class);
+            when(mockCommand1.command()).thenReturn("start");
+            when(mockCommand1.description()).thenReturn("Начать работу");
+
+            Command mockCommand2 = mock(Command.class);
+            when(mockCommand2.command()).thenReturn("help");
+            when(mockCommand2.description()).thenReturn("Показать помощь");
+
+            command = new HelpCommand(List.of(mockCommand1, mockCommand2));
+        }
+
         @Test
         @DisplayName("Должна возвращать правильное имя команды")
         void shouldReturnCorrectCommandName() {
-            HelpCommand command = new HelpCommand(List.of());
             assertThat(command.command()).isEqualTo("help");
         }
 
         @Test
         @DisplayName("Должна возвращать описание")
         void shouldReturnCorrectDescription() {
-            HelpCommand command = new HelpCommand(List.of());
             assertThat(command.description()).isNotBlank();
         }
 
         @Test
         @DisplayName("Должна выводить список всех доступных команд")
         void shouldListAllAvailableCommands() {
-            Command startCmd = mock(Command.class);
-            when(startCmd.command()).thenReturn("start");
-            when(startCmd.description()).thenReturn("Начать работу");
+            // given
+            long chatId = 123L;
+            Update update = createMockUpdate(chatId, "/help");
 
-            Command helpCmd = mock(Command.class);
-            when(helpCmd.command()).thenReturn("help");
-            when(helpCmd.description()).thenReturn("Показать помощь");
-
-            HelpCommand command = new HelpCommand(List.of(startCmd, helpCmd));
-            Update update = mockUpdateSimple(123L, "/help");
-
+            // when
             SendMessage response = command.handle(update);
 
+            // then
             String text = (String) response.getParameters().get("text");
             assertThat(text)
                     .contains("/start")
@@ -121,30 +138,25 @@ class CommandTest {
         @Test
         @DisplayName("Должна поддерживать команду /help")
         void shouldSupportHelpCommand() {
-            HelpCommand command = new HelpCommand(List.of());
-            Update update = mockUpdateSimple(123L, "/help");
-            assertThat(command.supports(update)).isTrue();
-        }
-
-        @Test
-        @DisplayName("Не должна поддерживать другие команды")
-        void shouldNotSupportOtherCommands() {
-            HelpCommand command = new HelpCommand(List.of());
-            Update update = mockUpdateSimple(123L, "/start");
-            assertThat(command.supports(update)).isFalse();
+            assertThat(command.supports("/help")).isTrue();
         }
     }
 
     @Nested
-    @DisplayName("GolCommand")
-    class GolCommandTest {
+    @DisplayName("ListCommand")
+    class ListCommandTest {
 
-        private final GolCommand command = new GolCommand();
+        private ListCommand command;
+
+        @BeforeEach
+        void setUp() {
+            command = new ListCommand(linkService);
+        }
 
         @Test
         @DisplayName("Должна возвращать правильное имя команды")
         void shouldReturnCorrectCommandName() {
-            assertThat(command.command()).isEqualTo("gol");
+            assertThat(command.command()).isEqualTo("list");
         }
 
         @Test
@@ -154,48 +166,123 @@ class CommandTest {
         }
 
         @Test
-        @DisplayName("Должна возвращать случайную фразу")
-        void shouldReturnRandomPhrase() {
-            Update update = mockUpdateSimple(123L, "/gol");
+        @DisplayName("Должна вызывать сервис для получения списка ссылок")
+        void shouldCallLinkService() {
+            // given
+            long chatId = 123L;
+            Update update = createMockUpdate(chatId, "/list");
+            SendMessage expectedResponse = new SendMessage(chatId, "Список ссылок");
+            when(linkService.getList(chatId)).thenReturn(expectedResponse);
 
+            // when
             SendMessage response = command.handle(update);
 
-            assertThat(response.getParameters().get("chat_id")).isEqualTo(123L);
-            assertThat((String) response.getParameters().get("text")).isNotBlank();
+            // then
+            verify(linkService).getList(chatId);
+            assertThat(response).isEqualTo(expectedResponse);
         }
 
         @Test
-        @DisplayName("Должна поддерживать команду /gol")
-        void shouldSupportGolCommand() {
-            Update update = mockUpdateSimple(123L, "/gol");
-            assertThat(command.supports(update)).isTrue();
+        @DisplayName("Должна поддерживать команду /list")
+        void shouldSupportListCommand() {
+            assertThat(command.supports("/list")).isTrue();
+        }
+    }
+
+    @Nested
+    @DisplayName("TrackCommand")
+    class TrackCommandTest {
+
+        private TrackCommand command;
+
+        @BeforeEach
+        void setUp() {
+            command = new TrackCommand(sessionService);
         }
 
         @Test
-        @DisplayName("Не должна поддерживать другие команды")
-        void shouldNotSupportOtherCommands() {
-            Update update = mockUpdateSimple(123L, "/start");
-            assertThat(command.supports(update)).isFalse();
+        @DisplayName("Должна возвращать правильное имя команды")
+        void shouldReturnCorrectCommandName() {
+            assertThat(command.command()).isEqualTo("track");
+        }
+
+        @Test
+        @DisplayName("Должна возвращать описание")
+        void shouldReturnCorrectDescription() {
+            assertThat(command.description()).isNotBlank();
+        }
+
+        @Test
+        @DisplayName("Должна устанавливать состояние WAITING_FOR_TRACK_LINK")
+        void shouldSetWaitingForTrackLinkState() {
+            // given
+            long chatId = 123L;
+            Update update = createMockUpdate(chatId, "/track");
+
+            // when
+            SendMessage response = command.handle(update);
+
+            // then
+            verify(sessionService).setState(chatId, UserState.WAITING_FOR_TRACK_LINK);
+            assertThat(response.getParameters().get("chat_id")).isEqualTo(chatId);
+            assertThat((String) response.getParameters().get("text")).contains("ссылку, которую вы хотите отслеживать");
+        }
+
+        @Test
+        @DisplayName("Должна поддерживать команду /track")
+        void shouldSupportTrackCommand() {
+            assertThat(command.supports("/track")).isTrue();
         }
     }
 
-    private static Update mockUpdate(long chatId, String firstName, String text) {
-        Update update = mock(Update.class);
-        Message message = mock(Message.class);
-        Chat chat = mock(Chat.class);
-        User user = mock(User.class);
+    @Nested
+    @DisplayName("UntrackCommand")
+    class UntrackCommandTest {
 
-        when(update.message()).thenReturn(message);
-        when(message.chat()).thenReturn(chat);
-        when(message.from()).thenReturn(user);
-        when(message.text()).thenReturn(text);
-        when(chat.id()).thenReturn(chatId);
-        when(user.firstName()).thenReturn(firstName);
+        private UntrackCommand command;
 
-        return update;
+        @BeforeEach
+        void setUp() {
+            command = new UntrackCommand(sessionService);
+        }
+
+        @Test
+        @DisplayName("Должна возвращать правильное имя команды")
+        void shouldReturnCorrectCommandName() {
+            assertThat(command.command()).isEqualTo("untrack");
+        }
+
+        @Test
+        @DisplayName("Должна возвращать описание")
+        void shouldReturnCorrectDescription() {
+            assertThat(command.description()).isNotBlank();
+        }
+
+        @Test
+        @DisplayName("Должна устанавливать состояние WAITING_FOR_UNTRACK_LINK")
+        void shouldSetWaitingForUntrackLinkState() {
+            // given
+            long chatId = 123L;
+            Update update = createMockUpdate(chatId, "/untrack");
+
+            // when
+            SendMessage response = command.handle(update);
+
+            // then
+            verify(sessionService).setState(chatId, UserState.WAITING_FOR_UNTRACK_LINK);
+            assertThat(response.getParameters().get("chat_id")).isEqualTo(chatId);
+            assertThat((String) response.getParameters().get("text"))
+                    .contains("ссылку, которую вы хотите ототслеживать");
+        }
+
+        @Test
+        @DisplayName("Должна поддерживать команду /untrack")
+        void shouldSupportUntrackCommand() {
+            assertThat(command.supports("/untrack")).isTrue();
+        }
     }
 
-    private static Update mockUpdateSimple(long chatId, String text) {
+    private Update createMockUpdate(long chatId, String text) {
         Update update = mock(Update.class);
         Message message = mock(Message.class);
         Chat chat = mock(Chat.class);

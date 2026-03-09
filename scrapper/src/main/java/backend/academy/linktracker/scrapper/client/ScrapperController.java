@@ -4,14 +4,11 @@ import backend.academy.linktracker.scrapper.client.dto.AddLinkRequest;
 import backend.academy.linktracker.scrapper.client.dto.LinkResponse;
 import backend.academy.linktracker.scrapper.client.dto.ListLinksResponse;
 import backend.academy.linktracker.scrapper.client.dto.RemoveLinkRequest;
-import backend.academy.linktracker.scrapper.client.exception.ChatNotFoundException;
-import backend.academy.linktracker.scrapper.client.exception.LinkNotFoundException;
 import backend.academy.linktracker.scrapper.service.LinksKeeper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,17 +24,13 @@ public class ScrapperController {
     private final LinksKeeper linksKeeper;
 
     @PostMapping("/links")
-    public LinkResponse addLink(
-        @RequestHeader("Tg-Chat-Id") Long chatId,
-        @RequestBody AddLinkRequest request) {
+    public LinkResponse addLink(@RequestHeader("Tg-Chat-Id") Long chatId, @RequestBody AddLinkRequest request) {
         log.info("Добавление ссылки {} для чата {}", request.link(), chatId);
         return linksKeeper.addLink(chatId, request);
     }
 
     @DeleteMapping("/links")
-    public LinkResponse removeLink(
-        @RequestHeader("Tg-Chat-Id") Long chatId,
-        @RequestBody RemoveLinkRequest request) {
+    public LinkResponse removeLink(@RequestHeader("Tg-Chat-Id") Long chatId, @RequestBody RemoveLinkRequest request) {
         log.info("Удаление ссылки {} для чата {}", request.link(), chatId);
         return linksKeeper.removeLink(chatId, request);
     }
