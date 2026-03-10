@@ -15,7 +15,7 @@ public class UpdateHandler {
     private final TelegramBot telegramBot;
 
     public void handleUpdate(LinkUpdate update) {
-        String text = String.format("Обновление ссылки\n%s\n%s", update.url(), update.description());
+        String text = String.format("Обновление ссылки%n%s%n%s", update.url(), update.description());
 
         for (long chatId : update.tgChatIds()) {
             try {
