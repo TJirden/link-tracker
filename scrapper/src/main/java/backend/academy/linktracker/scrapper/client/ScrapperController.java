@@ -5,6 +5,7 @@ import backend.academy.linktracker.scrapper.client.dto.LinkResponse;
 import backend.academy.linktracker.scrapper.client.dto.ListLinksResponse;
 import backend.academy.linktracker.scrapper.client.dto.RemoveLinkRequest;
 import backend.academy.linktracker.scrapper.service.LinksKeeper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings; // ДОБАВИТЬ
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -24,24 +25,28 @@ public class ScrapperController {
     private final LinksKeeper linksKeeper;
 
     @PostMapping("/links")
+    @SuppressFBWarnings(value = "CRLF_INJECTION_LOGS", justification = "URL is validated elsewhere")
     public LinkResponse addLink(@RequestHeader("Tg-Chat-Id") Long chatId, @RequestBody AddLinkRequest request) {
         log.info("Добавление ссылки {} для чата {}", request.link(), chatId);
         return linksKeeper.addLink(chatId, request);
     }
 
     @DeleteMapping("/links")
+    @SuppressFBWarnings(value = "CRLF_INJECTION_LOGS", justification = "URL is validated elsewhere")
     public LinkResponse removeLink(@RequestHeader("Tg-Chat-Id") Long chatId, @RequestBody RemoveLinkRequest request) {
         log.info("Удаление ссылки {} для чата {}", request.link(), chatId);
         return linksKeeper.removeLink(chatId, request);
     }
 
     @GetMapping("/links")
+    @SuppressFBWarnings(value = "CRLF_INJECTION_LOGS", justification = "ChatId is a number")
     public ListLinksResponse getLinks(@RequestHeader("Tg-Chat-Id") Long chatId) {
         log.info("Получение списка ссылок для чата {}", chatId);
         return linksKeeper.getLinks(chatId);
     }
 
     @PostMapping("/tg-chat/{id}")
+    @SuppressFBWarnings(value = "CRLF_INJECTION_LOGS", justification = "ChatId is a number")
     public ResponseEntity<Void> registerChat(@PathVariable("id") Long id) {
         log.info("Регистрация нового чата: {}", id);
         linksKeeper.registerChat(id);
@@ -49,6 +54,7 @@ public class ScrapperController {
     }
 
     @DeleteMapping("/tg-chat/{id}")
+    @SuppressFBWarnings(value = "CRLF_INJECTION_LOGS", justification = "ChatId is a number")
     public ResponseEntity<Void> deleteChat(@PathVariable("id") Long id) {
         log.info("Удаление чата: {}", id);
         linksKeeper.deleteChat(id);

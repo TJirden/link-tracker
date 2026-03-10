@@ -67,7 +67,7 @@ public class LinkService {
             StringBuilder message = new StringBuilder("Ссылка успешно добавлена в отслеживание!\n\n");
             message.append("`").append(url).append("`\n");
 
-            if (tags != null && !tags.isEmpty()) {
+            if (!tags.isEmpty()) {
                 String tagsStr = String.join(" ", tags);
                 message.append("Теги: ").append(tagsStr);
             } else {
