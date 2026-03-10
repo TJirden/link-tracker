@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class TrackCommand implements Command {
+public class TrackCommand implements NonDialogCommand {
 
     private final UserSessionService sessionService;
 

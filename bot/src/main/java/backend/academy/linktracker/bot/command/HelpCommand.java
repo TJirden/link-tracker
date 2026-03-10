@@ -9,9 +9,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class HelpCommand implements Command {
+public class HelpCommand implements NonDialogCommand {
 
-    private final List<Command> commands;
+    private final List<NonDialogCommand> commands;
 
     @Override
     public String command() {
@@ -29,7 +29,7 @@ public class HelpCommand implements Command {
 
         StringBuilder sb = new StringBuilder("*Доступные команды:*\n\n");
 
-        for (Command cmd : commands) {
+        for (NonDialogCommand cmd : commands) {
             sb.append(String.format("/%s — %s%n", cmd.command(), cmd.description()));
         }
 

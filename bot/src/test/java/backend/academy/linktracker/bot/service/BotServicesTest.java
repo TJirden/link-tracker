@@ -9,7 +9,7 @@ import backend.academy.linktracker.bot.client.dto.LinkResponse;
 import backend.academy.linktracker.bot.client.dto.LinkUpdate;
 import backend.academy.linktracker.bot.client.dto.ListLinksResponse;
 import backend.academy.linktracker.bot.client.dto.RemoveLinkRequest;
-import backend.academy.linktracker.bot.command.Command;
+import backend.academy.linktracker.bot.command.NonDialogCommand;
 import backend.academy.linktracker.bot.command.TrackCommand;
 import backend.academy.linktracker.bot.command.UntrackCommand;
 import com.pengrad.telegrambot.TelegramBot;
@@ -62,7 +62,7 @@ class BotServicesTest {
         trackCommand = new TrackCommand(sessionService);
         untrackCommand = new UntrackCommand(sessionService);
 
-        List<Command> commands = List.of(trackCommand, untrackCommand);
+        List<NonDialogCommand> commands = List.of(trackCommand, untrackCommand);
         botUpdateListener = new BotUpdateListener(telegramBot, commands, sessionService, linkProcessor);
     }
 

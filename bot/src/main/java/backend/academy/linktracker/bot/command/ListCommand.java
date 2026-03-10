@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class ListCommand implements Command {
+public class ListCommand implements NonDialogCommand {
 
     private final LinkService linkService;
 

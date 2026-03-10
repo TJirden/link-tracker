@@ -3,6 +3,10 @@ package backend.academy.linktracker.bot.service;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,6 +26,11 @@ public class LinkProcessor {
         long chatId = update.message().chat().id();
         String text = update.message().text();
 
+        if (text.startsWith("/")) {
+            log.info("Получено команда в диалоге chatId={}, text={}", chatId, text);
+            return new SendMessage(chatId, "Не жду команды Введи /cancel для отмены ввода.");
+        }
+
         UserState state = sessionService.getState(chatId);
 
         return switch (state) {
@@ -31,7 +40,7 @@ public class LinkProcessor {
             default -> {
                 log.warn("Пользователь {} попал в неизвестное состояние {}", chatId, state);
                 sessionService.clearSession(chatId);
-                yield new SendMessage(chatId, "Произошла ошибка состояния. Попробуйте начать заново через /help.");
+                yield new SendMessage(chatId, "Произошла ошибка состояния. Попробуйте начать заново.");
             }
         };
     }
@@ -44,13 +53,23 @@ public class LinkProcessor {
                         chatId, "Это не похоже на ссылку. Укажите полный URL (например, https://github.com/...).");
             }
 
-            sessionService.saveTempLink(chatId, text);
+            String host = uri.getHost();
+            if (host == null || (!host.contains("github.com") && !host.contains("stackoverflow.com"))) {
+                return new SendMessage(
+                        chatId,
+                        "Поддерживаются только ссылки на GitHub и StackOverflow.\n"
+                                + "Попробуйте еще раз или введите /cancel для отмены.");
+            }
 
+            sessionService.saveTempLink(chatId, text);
             sessionService.setState(chatId, UserState.WAITING_FOR_TAGS);
 
-            return new SendMessage(
-                    chatId,
-                    "Ссылка принята! \nТеперь отправьте __теги__ (через запятую/пробел) или напишите /cancel для отмены.");
+            return new SendMessage(chatId, """
+                    Ссылка принята!
+                    Теперь отправьте **теги** через запятую.
+                    Например: `java, spring, boot`
+                    Или используйте /notags, если теги не нужны.
+                    Для отмены введите /cancel""");
 
         } catch (IllegalArgumentException e) {
             return new SendMessage(chatId, "Некорректный формат ссылки. Попробуйте еще раз.");
@@ -66,10 +85,9 @@ public class LinkProcessor {
         }
 
         URI uri = URI.create(urlString);
+        Set<String> tags = parseTags(text);
 
-        // TODO: сделать поддержку тегов)
-        SendMessage response = linkService.trackLink(chatId, uri);
-
+        SendMessage response = linkService.trackLink(chatId, uri, tags);
         sessionService.clearSession(chatId);
 
         return response;
@@ -79,8 +97,12 @@ public class LinkProcessor {
         try {
             URI uri = URI.create(text);
 
-            SendMessage response = linkService.untrackLink(chatId, uri);
+            if (!uri.isAbsolute()) {
+                return new SendMessage(
+                        chatId, "Это не похоже на ссылку. Укажите полный URL (например, https://github.com/...).");
+            }
 
+            SendMessage response = linkService.untrackLink(chatId, uri);
             sessionService.clearSession(chatId);
 
             return response;
@@ -88,5 +110,27 @@ public class LinkProcessor {
         } catch (IllegalArgumentException e) {
             return new SendMessage(chatId, "Некорректный формат ссылки. Попробуйте еще раз.");
         }
+    }
+
+    /**
+     * Парсит теги из текста
+     * Разделители: запятая
+     */
+    private Set<String> parseTags(String text) {
+        if (text == null || text.trim().isEmpty() || text.equalsIgnoreCase("/notags")) {
+            return new HashSet<>();
+        }
+
+        String[] parts = text.split(",");
+
+        return Arrays.stream(parts)
+                .map(String::trim)
+                .filter(tag -> !tag.isEmpty())
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
+    }
+
+    public SendMessage withoutTags(long chatId) {
+        return processTags(chatId, null);
     }
 }

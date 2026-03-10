@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @RequiredArgsConstructor
 @Component
-public class StartCommand implements Command {
+public class StartCommand implements NonDialogCommand {
 
     private final ScrapperClient scrapperClient;
 

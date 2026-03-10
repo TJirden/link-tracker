@@ -25,8 +25,8 @@ import org.springframework.http.ResponseEntity;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-@DisplayName("Command Tests")
-class CommandTest {
+@DisplayName("NonDialogCommand Tests")
+class NonDialogCommandTest {
 
     @Mock
     private ScrapperClient scrapperClient;
@@ -93,11 +93,11 @@ class CommandTest {
 
         @BeforeEach
         void setUp() {
-            Command mockCommand1 = mock(Command.class);
+            NonDialogCommand mockCommand1 = mock(NonDialogCommand.class);
             when(mockCommand1.command()).thenReturn("start");
             when(mockCommand1.description()).thenReturn("Начать работу");
 
-            Command mockCommand2 = mock(Command.class);
+            NonDialogCommand mockCommand2 = mock(NonDialogCommand.class);
             when(mockCommand2.command()).thenReturn("help");
             when(mockCommand2.description()).thenReturn("Показать помощь");
 

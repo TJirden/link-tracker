@@ -7,7 +7,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.stereotype.Component;
 
 @Component
-public class GolCommand implements Command {
+public class GolCommand implements NonDialogCommand {
 
     /** Response provided by Google */
     private static final List<String> PHRASES = List.of(
