@@ -2,11 +2,8 @@ package backend.academy.linktracker.bot.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,7 +12,6 @@ import backend.academy.linktracker.bot.client.ScrapperClient;
 import backend.academy.linktracker.bot.client.dto.LinkResponse;
 import backend.academy.linktracker.bot.client.dto.LinkUpdate;
 import backend.academy.linktracker.bot.client.dto.ListLinksResponse;
-import backend.academy.linktracker.bot.client.dto.RemoveLinkRequest;
 import backend.academy.linktracker.bot.command.CancelCommand;
 import backend.academy.linktracker.bot.command.DialogCommand;
 import backend.academy.linktracker.bot.command.NonDialogCommand;
@@ -84,8 +80,8 @@ class BotServicesTest {
         List<DialogCommand> dialogCommands = List.of(notagsCommand, cancelCommand);
 
         updateProcessor = new UpdateProcessor(nonDialogCommands, dialogCommands, sessionService, linkProcessor);
-        botUpdateListener = new BotUpdateListener(telegramBot, nonDialogCommands, dialogCommands, updateProcessor,
-            sessionService);
+        botUpdateListener =
+                new BotUpdateListener(telegramBot, nonDialogCommands, dialogCommands, updateProcessor, sessionService);
     }
 
     @Test
@@ -101,8 +97,7 @@ class BotServicesTest {
         // then
         verify(sessionService).setState(chatId, UserState.WAITING_FOR_TRACK_LINK);
         assertThat(result.getParameters().get("chat_id")).isEqualTo(chatId);
-        assertThat((String) result.getParameters().get("text"))
-            .contains("ссылку, которую вы хотите отслеживать");
+        assertThat((String) result.getParameters().get("text")).contains("ссылку, которую вы хотите отслеживать");
     }
 
     @Test
@@ -118,8 +113,7 @@ class BotServicesTest {
         // then
         verify(sessionService).setState(chatId, UserState.WAITING_FOR_UNTRACK_LINK);
         assertThat(result.getParameters().get("chat_id")).isEqualTo(chatId);
-        assertThat((String) result.getParameters().get("text"))
-            .contains("ототслеживать");
+        assertThat((String) result.getParameters().get("text")).contains("ототслеживать");
     }
 
     @Test
@@ -162,8 +156,8 @@ class BotServicesTest {
         // given
         long chatId = 123L;
         List<LinkResponse> links = List.of(
-            new LinkResponse(1L, URI.create("https://github.com/user/repo1"), null),
-            new LinkResponse(2L, URI.create("https://github.com/user/repo2"), null));
+                new LinkResponse(1L, URI.create("https://github.com/user/repo1"), null),
+                new LinkResponse(2L, URI.create("https://github.com/user/repo2"), null));
         ListLinksResponse response = new ListLinksResponse(links, 2);
 
         when(scrapperClient.getLinks(chatId)).thenReturn(ResponseEntity.ok(response));
@@ -173,9 +167,9 @@ class BotServicesTest {
 
         // then
         assertThat((String) result.getParameters().get("text"))
-            .contains("Ваши ссылки:")
-            .contains("github.com/user/repo1")
-            .contains("github.com/user/repo2");
+                .contains("Ваши ссылки:")
+                .contains("github.com/user/repo1")
+                .contains("github.com/user/repo2");
     }
 
     @Test
@@ -191,8 +185,7 @@ class BotServicesTest {
         SendMessage result = linkService.getList(chatId);
 
         // then
-        assertThat((String) result.getParameters().get("text"))
-            .contains("Список отслеживаемых ссылок пуст");
+        assertThat((String) result.getParameters().get("text")).contains("Список отслеживаемых ссылок пуст");
     }
 
     @Test
@@ -207,8 +200,7 @@ class BotServicesTest {
         SendMessage result = linkService.getList(chatId);
 
         // then
-        assertThat((String) result.getParameters().get("text"))
-            .contains("Не удалось получить список ссылок");
+        assertThat((String) result.getParameters().get("text")).contains("Не удалось получить список ссылок");
     }
 
     @Test
@@ -216,7 +208,7 @@ class BotServicesTest {
     void shouldHandleLinkUpdates() {
         // given
         LinkUpdate update =
-            new LinkUpdate(1L, URI.create("https://github.com/user/repo"), "Новый коммит", List.of(123L, 456L));
+                new LinkUpdate(1L, URI.create("https://github.com/user/repo"), "Новый коммит", List.of(123L, 456L));
 
         // when
         updateHandler.handleUpdate(update);
@@ -320,7 +312,6 @@ class BotServicesTest {
         verify(linkProcessor).withoutTags(chatId);
         assertThat(result).isSameAs(expectedMessage);
     }
-
 
     private Update mockUpdate(long chatId, String text) {
         Update update = mock(Update.class);
