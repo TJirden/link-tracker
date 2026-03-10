@@ -87,10 +87,7 @@ public class LinkProcessor {
         URI uri = URI.create(urlString);
         Set<String> tags = parseTags(text);
 
-        SendMessage response = linkService.trackLink(chatId, uri, tags);
-        sessionService.clearSession(chatId);
-
-        return response;
+        return linkService.trackLink(chatId, uri, tags);
     }
 
     private SendMessage processUntrackLink(long chatId, String text) {
