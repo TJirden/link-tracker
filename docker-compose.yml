@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: scrapper
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  scrapper:
+    build: ./scrapper
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres
+
+  bot:
+    build: ./bot
+    ports:
+      - "8080:8080"
+    depends_on:
+      - scrapper
+
+volumes:
+  postgres_data:

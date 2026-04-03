@@ -52,3 +52,15 @@ test:
     - echo "$CI_JOB_TOKEN" | docker login gitlab.education.tbank.ru:443 -u gitlab-ci-token --password-stdin
   script:
     - ./mvnw verify
+
+migrations:
+  stage: migrate
+  image: liquibase/liquibase:4.25
+  script:
+    - liquibase --url=jdbc:postgresql://$DB_HOST:$DB_PORT/scrapper
+      --username=$DB_USER
+      --password=$DB_PASS
+      --changeLogFile=migrations/master.xml
+      update
+  only:
+    - main

@@ -4,8 +4,17 @@ server:
 spring:
   application:
     name: scrapper
+  datasource:
+    url: jdbc:postgresql://localhost:5432/scrapper
+    username: postgres
+    password: postgres
+
+  liquibase:
+    change-log: classpath:migrations/master.xml
 
 app:
+  database:
+    access-type: ${ACCESS_TYPE:orm}
   stackoverflow:
     key: ${STACKOVERFLOW_KEY} # Use env variable. DO NOT KEEP TOKEN HERE
     access-token: ${STACKOVERFLOW_ACCESS_KEY} # Use env variable. DO NOT KEEP TOKEN HERE

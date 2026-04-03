@@ -1,0 +1,12 @@
+--liquibase formatted sql
+--changeset artur:2
+
+CREATE TABLE IF NOT EXISTS links (
+    id BIGSERIAL PRIMARY KEY,
+    url TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_check_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+--rollback DROP TABLE links;
